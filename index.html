@@ -1,0 +1,113 @@
+
+<h1>🎮 Click the Box!</h1>
+
+<div id="panel">
+  <h2>Score: <span id="score">0</span></h2>
+  <h2>Time: <span id="time">15</span></h2>
+  <input id="player" placeholder="Enter your name">
+  <button onclick="startGame()">Start Game</button>
+  <p id="result"></p>
+  <h3>🏆 Leaderboard</h3>
+  <ol id="leaderboard"></ol>
+  <button onclick="resetLeaderboard()">Reset Leaderboard</button>
+</div>
+
+<div id="box" onclick="clickBox()"></div>
+
+
+
+
+body{margin:0;font-family:Arial,sans-serif;background:lightblue;overflow:hidden}
+h1{text-align:center;margin-top:15px}
+#panel{position:fixed;top:10px;right:10px;width:200px;max-height:90vh;overflow-y:auto;background:white;padding:12px;border-radius:10px;box-shadow:0 2px 8px #777;z-index:10}
+#panel h2{font-size:17px;margin:5px 0 10px}
+#panel h3{margin-bottom:5px}
+#player{width:100%;box-sizing:border-box;padding:7px;margin:5px 0}
+button{padding:7px;margin:4px 0;cursor:pointer}
+#result{font-weight:bold;font-size:14px}
+#leaderboard{padding-left:25px;font-size:14px}
+#leaderboard li{margin-bottom:6px;overflow-wrap:anywhere}
+#box{width:60px;height:60px;background:red;position:absolute;left:100px;top:150px;cursor:pointer;border-radius:8px}
+
+
+
+
+
+
+
+let score = 0, time = 15, playing = false, timer;
+let scores = JSON.parse(localStorage.getItem("scores") || "[]");
+const $ = id => document.getElementById(id);
+
+showLeaderboard();
+
+function startGame() {
+  if (!$("player").value.trim()) return alert("Please enter your name first!");
+
+  clearInterval(timer);
+  score = 0;
+  time = 15;
+  playing = true;
+  $("score").innerText = score;
+  $("time").innerText = time;
+  $("result").innerText = "";
+  moveBox();
+
+  timer = setInterval(() => {
+    $("time").innerText = --time;
+    if (time <= 0) {
+      clearInterval(timer);
+      playing = false;
+      saveScore();
+    }
+  }, 1000);
+}
+
+function clickBox() {
+  if (!playing) return;
+  $("score").innerText = ++score;
+  moveBox();
+}
+
+function moveBox() {
+  const box = $("box"), panel = $("panel");
+  let x, y;
+
+  do {
+    x = Math.random() * (innerWidth - 60);
+    y = Math.random() * (innerHeight - 60);
+  } while (
+    x < panel.offsetLeft + panel.offsetWidth &&
+    x + 60 > panel.offsetLeft &&
+    y < panel.offsetTop + panel.offsetHeight &&
+    y + 60 > panel.offsetTop
+  );
+
+  box.style.left = x + "px";
+  box.style.top = y + "px";
+}
+
+function saveScore() {
+  const name = $("player").value.trim();
+  scores.push({ name, score });
+  scores.sort((a, b) => b.score - a.score);
+  scores = scores.slice(0, 10);
+  localStorage.setItem("scores", JSON.stringify(scores));
+  $("result").innerText = `Game Over! ${name}, you clicked ${score} times!`;
+  $("player").value = "";
+  showLeaderboard();
+}
+
+function showLeaderboard() {
+  $("leaderboard").innerHTML = scores
+    .map(p => `<li>${p.name} - ${p.score} clicks</li>`)
+    .join("");
+}
+
+function resetLeaderboard() {
+  if (!confirm("Are you sure you want to clear all leaderboard scores?")) return;
+  scores = [];
+  localStorage.removeItem("scores");
+  showLeaderboard();
+  $("result").innerText = "Leaderboard cleared!";
+}
